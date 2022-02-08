@@ -28,7 +28,7 @@ class Application(tk.Tk):
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
 
-        self.show_frame(ShowAttendance)
+        self.show_frame(Menu)
 
     def show_frame(self, page):
         frame = self.frames[page]
@@ -83,7 +83,7 @@ class Login(tk.Frame):
 class Menu(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-        bgimgpath = "UI 2/menu.png"
+        bgimgpath = "UI 2/new menu.png"
         load = Image.open(bgimgpath)
         photo = ImageTk.PhotoImage(load)
         label = tk.Label(self, image=photo)
@@ -104,7 +104,7 @@ class Menu(tk.Frame):
                                  command=lambda: controller.show_frame(ShowAttendance)).place(x=413, y=242)
 
         startbutton = tk.Button(self, text="Start Attendance", fg="black", border=0, font=("", 29, "bold"), padx=152,
-                                command=lambda: self.startAttendance()).place(x=107, y=330)
+                                command=lambda: self.startAttendance()).place(x=107, y=328)
 
     def startAttendance(self):
         import camera
@@ -407,7 +407,7 @@ class ShowAttendance(tk.Frame):
                             command=lambda: controller.show_frame(Menu)).place(x=75, y=30)
 
         searchbutton = tk.Button(self, text='Search', fg="black", border=0, font=("", 26, "bold"), padx=9,
-                              command = lambda:self.getdata()).place(x=483, y=56)
+                              command = lambda: self.getdata()).place(x=483, y=56)
 
     def getdata(self):
         # self.date_entry.insert(0, searchDate)
