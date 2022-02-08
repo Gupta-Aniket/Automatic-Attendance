@@ -403,6 +403,9 @@ class ShowAttendance(tk.Frame):
 
         self.date_entry.place(x=280, y=56)
 
+        backbtn = tk.Button(self, text="◀ Back", fg="black", border=0, font=("", 16), padx=10,
+                            command=lambda: controller.show_frame(Menu)).place(x=75, y=30)
+
         searchbutton = tk.Button(self, text='Search', fg="black", border=0, font=("", 26, "bold"), padx=9,
                               command = lambda:self.getdata()).place(x=483, y=56)
 
