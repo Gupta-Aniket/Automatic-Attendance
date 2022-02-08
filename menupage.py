@@ -6,7 +6,7 @@ import tkinter as tk
 from tkinter import END, Button, Entry, Label, PhotoImage, messagebox, filedialog
 import face_recognition as fr
 import shutil
-from datetime import datetime, date
+
 
 # defaults
 DefalutLoginId = "Admin"
@@ -23,12 +23,12 @@ class Application(tk.Tk):
         window.grid_columnconfigure(0, minsize=800)
 
         self.frames = {}
-        for F in (Login, Menu, AddAPerson, RemoveAPerson, ShowDB, ShowAttendance):
+        for F in (Login, Menu, AddAPerson, RemoveAPerson, ShowDB):
             frame = F(window, self)
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
 
-        self.show_frame(ShowAttendance)
+        self.show_frame(Menu)
 
     def show_frame(self, page):
         frame = self.frames[page]
@@ -101,7 +101,7 @@ class Menu(tk.Frame):
                                command=lambda: controller.show_frame(ShowDB)).place(x=107, y=240)
 
         showattendance = tk.Button(self, text="Show Attendance", fg="black", border=0, font=("", 29, "bold"), padx=0,
-                                 command=lambda: controller.show_frame(ShowAttendance)).place(x=413, y=242)
+                                 command=lambda: controller.show_frame(ShowDB)).place(x=413, y=242)
 
         startbutton = tk.Button(self, text="Start Attendance", fg="black", border=0, font=("", 29, "bold"), padx=152,
                                 command=lambda: self.startAttendance()).place(x=107, y=330)
@@ -115,7 +115,7 @@ class Menu(tk.Frame):
 class AddAPerson(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
-        bgimgpath = "UI 2/new Add a person.png"
+        bgimgpath = "UI 2/Add a person.png"
         load = Image.open(bgimgpath)
         photo = ImageTk.PhotoImage(load)
         label = tk.Label(self, image=photo)
@@ -128,14 +128,9 @@ class AddAPerson(tk.Frame):
         self.name.place(x=240, y=113)
         self.name.bind('<Return>', lambda func1: self.empid.focus())
 
-        self.empid = tk.Entry(self, font=("Ivory", 26), bg="grey", fg="orange", width=8)
+        self.empid = tk.Entry(self, font=("Ivory", 26), bg="grey", fg="orange", width=26)
         self.empid.place(x=240, y=169)
-        self.empid.bind('<Return>', lambda func2: self.job.focus())
-
-        self.job = tk.Entry(self, font=("Ivory", 26), bg="grey", fg="orange", width=12)
-        self.job.place(x=463, y=169)
-        self.job.bind('<Return>', lambda func: self.address.focus())
-
+        self.empid.bind('<Return>', lambda func2: self.address.focus())
 
         self.address = tk.Entry(self, font=("Ivory", 26), bg="grey", fg="orange", width=26)
         self.address.place(x=240, y=223)
@@ -144,7 +139,6 @@ class AddAPerson(tk.Frame):
         self.mobile = tk.Entry(self, font=("Ivory", 26), bg="grey", fg="orange", width=26)
         self.mobile.place(x=240, y=280)
         self.chkimg = tk.Label(self, text="", font=("", 26))
-
 
         # self.mobile.bind('<Return>', lambda: self.capture)
 
@@ -202,7 +196,6 @@ class AddAPerson(tk.Frame):
         self.empid.delete(0, 'end')
         self.address.delete(0, 'end')
         self.mobile.delete(0, 'end')
-        self.job.delete(0, 'end')
         self.chkimg.config(text='')
 
     def makedb(self):
@@ -210,7 +203,6 @@ class AddAPerson(tk.Frame):
         c = conn.cursor()
         c.execute("""CREATE TABLE IF NOT EXISTS users (name TEXT, 
                                                             empId TEXT PRIMARY KEY,
-                                                            job TEXT,
                                                             address TEXT, 
                                                             mob INT,
                                                             image BLOB)""")
@@ -219,7 +211,7 @@ class AddAPerson(tk.Frame):
         conn.close()
 
     def addtodatabase(self):
-        if self.name.get() == '' or self.empid.get() == '' or self.mobile.get() == '' or self.address.get() == '' or self.job.get() == '' or self.value == False:
+        if self.name.get() == '' or self.empid.get() == '' or self.mobile.get() == '' or self.address.get() == '' or self.value == False:
             messagebox.showwarning(title="Fields Empty",
                                    message="One or more fields empty",
                                    parent=self)
@@ -229,7 +221,6 @@ class AddAPerson(tk.Frame):
         add_empid = self.empid.get()
         add_address = self.address.get()
         add_mob = self.mobile.get()
-        add_job = self.job.get()
         with open('image.jpg', 'rb') as f:
             add_img = f.read()
 
@@ -237,8 +228,8 @@ class AddAPerson(tk.Frame):
         conn = sqlite3.connect('attendance.db')
         c = conn.cursor()
         try:
-            c.execute(f"""INSERT INTO users (name, empid, job, address, mob, image)
-                        VALUES (?, ?, ?, ?, ?, ?)""", (add_name, add_empid, add_job, add_address, add_mob, add_img))
+            c.execute(f"""INSERT INTO users (name, empid, address, mob, image)
+                        VALUES (?, ?, ?, ?, ?)""", (add_name, add_empid, add_address, add_mob, add_img))
 
         except sqlite3.IntegrityError:
             messagebox.showerror(title="Already Present",
@@ -356,7 +347,7 @@ class ShowDB(tk.Frame):
         self.db.config(state='normal')
         self.db.delete('1.0', 'end')
         for x in text:
-            self.db.insert(tk.END, x[0] + space + x[1] + space + x[2] + space + str(x[3]) + space + str(x[4]) + '\n')
+            self.db.insert(tk.END, x[0] + space + x[1] + space + x[2] + space + str(x[3]) + '\n')
 
         self.db.config(state='disabled')
         conn.commit()
@@ -368,81 +359,7 @@ class ShowDB(tk.Frame):
         #     c.close()
         #     conn.close()
         return
-
-
-class ShowAttendance(tk.Frame):
-    def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
-        bgimgpath = "UI 2/Show attendance.png"
-        load = Image.open(bgimgpath)
-        photo = ImageTk.PhotoImage(load)
-        label = tk.Label(self, image=photo)
-        label.image = photo
-        label.place(x=0, y=0, relheight=1, relwidth=1)
-
-        scroll_v = tk.Scrollbar(self, orient=tk.VERTICAL)
-        scroll_v.pack(side=tk.RIGHT, fill="y")
-
-        scroll_h = tk.Scrollbar(self, orient=tk.HORIZONTAL)
-        scroll_h.pack(side=tk.BOTTOM, fill="x")
-
-        self.db = tk.Text(self, font=("Ivory", 26), bg="grey", fg="orange", width=34, height=9, pady=6, padx=2,
-                          wrap=tk.NONE, yscrollcommand=scroll_v.set, xscrollcommand=scroll_h.set)
-        scroll_h.config(command=self.db.xview)
-        scroll_v.config(command=self.db.yview)
-        self.db.place(x=113, y=105)
-
-
-        self.db.config(state='disabled')
-
-        searchDate = date.today()
-        searchDate = str(searchDate)
-
-        self.date_entry = tk.Entry(self, font=("Ivory", 26), bg="grey", fg="orange", width=11)
-
-
-        self.date_entry.place(x=280, y=56)
-
-        searchbutton = tk.Button(self, text='Search', fg="black", border=0, font=("", 26, "bold"), padx=9,
-                              command = lambda:self.getdata()).place(x=483, y=56)
-
-    def getdata(self):
-        # self.date_entry.insert(0, searchDate)
-        searchDate = self.date_entry.get()
-        searchDate = str(searchDate)
-        # print(searchDate)
-        conn = sqlite3.connect('attendance.db')
-        c = conn.cursor()
-        try:
-            text = c.execute(f'SELECT * FROM "{searchDate}"')
-        except sqlite3.OperationalError:
-            messagebox.showerror(title="No such table",
-                                message="No such table exists!",
-                                parent=self)
-            self.db.config(state='normal')
-            self.db.delete('1.0', 'end')
-            self.db.config(state='disabled')
-
-            return
-        space = " || "
-        self.db.config(state='normal')
-        self.db.delete('1.0', 'end')
-        for x in text:
-            self.db.insert(tk.END,
-                           x[0] + space + x[1] + space + x[3] + '\n')
-
-        self.db.config(state='disabled')
-        conn.commit()
-        c.close()
-        conn.close()
-
-        # except:
-        #     messagebox.showerror(title="Error", message="No Person is added to the table", parent=self)
-        #     c.close()
-        #     conn.close()
-        return
-
-
 
 app = Application()
+# app.iconbitmap("UI 2/icon.ico")
 app.mainloop()
