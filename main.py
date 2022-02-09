@@ -98,10 +98,10 @@ class Menu(tk.Frame):
                               command=lambda: controller.show_frame(RemoveAPerson)).place(x=413, y=156)
 
         showdatabase = tk.Button(self, text="Show Database", fg="black", border=0, font=("", 29, "bold"), padx=11,
-                               command=lambda: controller.show_frame(ShowDB)).place(x=107, y=240)
+                                 command=lambda: controller.show_frame(ShowDB)).place(x=107, y=240)
 
         showattendance = tk.Button(self, text="Show Attendance", fg="black", border=0, font=("", 29, "bold"), padx=0,
-                                 command=lambda: controller.show_frame(ShowAttendance)).place(x=413, y=242)
+                                   command=lambda: controller.show_frame(ShowAttendance)).place(x=413, y=242)
 
         startbutton = tk.Button(self, text="Start Attendance", fg="black", border=0, font=("", 29, "bold"), padx=152,
                                 command=lambda: self.startAttendance()).place(x=107, y=328)
@@ -124,18 +124,18 @@ class AddAPerson(tk.Frame):
 
         self.value = False
         # entry
+
         self.name = tk.Entry(self, font=("Ivory", 26), bg="grey", fg="orange", width=26)
         self.name.place(x=240, y=113)
-        self.name.bind('<Return>', lambda func1: self.empid.focus())
+        # self.name.bind('<Return>', lambda func1: self.autoEmployee())
 
         self.empid = tk.Entry(self, font=("Ivory", 26), bg="grey", fg="orange", width=8)
         self.empid.place(x=240, y=169)
-        self.empid.bind('<Return>', lambda func2: self.job.focus())
+        # self.empid.bind('<Return>', lambda func2: autoEmployee())
 
         self.job = tk.Entry(self, font=("Ivory", 26), bg="grey", fg="orange", width=12)
         self.job.place(x=463, y=169)
         self.job.bind('<Return>', lambda func: self.address.focus())
-
 
         self.address = tk.Entry(self, font=("Ivory", 26), bg="grey", fg="orange", width=26)
         self.address.place(x=240, y=223)
@@ -144,13 +144,8 @@ class AddAPerson(tk.Frame):
         self.mobile = tk.Entry(self, font=("Ivory", 26), bg="grey", fg="orange", width=26)
         self.mobile.place(x=240, y=280)
         self.chkimg = tk.Label(self, text="", font=("", 26))
-
-
-        # self.mobile.bind('<Return>', lambda: self.capture)
-
-        # functions:
-
-        # buttons
+        self.autoEmployee()
+        #
         addimg = tk.Button(self, text="Add image", fg="black", border=0, font=("", 29, "bold"), padx=32,
                            command=self.capture).place(x=124, y=357)
 
@@ -165,6 +160,30 @@ class AddAPerson(tk.Frame):
 
         self.makedb()
 
+    def autoEmployee(self):
+
+        if os.path.getsize("remove.txt") != 0:
+            with open("remove.txt", "r") as f:
+                text = f.read()
+            self.empid.config(state='normal')
+            self.empid.delete(0, "end")
+            self.empid.insert(0, text[0])
+            self.empid.config(state='disabled')
+
+
+        else:
+            conn = sqlite3.connect('attendance.db')
+            c = conn.cursor()
+            result = c.execute("SELECT count(*) FROM users").fetchall()  # returns array of tupples
+            n = result[0][0]
+            self.empid.config(state='normal')
+            self.empid.delete(0, "end")
+            self.empid.insert(0, "E-"+str(n+1))
+            self.empid.config(state='disabled')
+            conn.commit()
+            c.close()
+            conn.close()
+
     def capture(self):
         # captured = False
         answer = messagebox.askokcancel(title="chose file",
@@ -173,7 +192,7 @@ class AddAPerson(tk.Frame):
         if answer:
             # captured = True
             filename = filedialog.askopenfilename()
-            filename= str(filename)
+            filename = str(filename)
             self.value = True
             shutil.copy(filename, "image.jpg")
 
@@ -184,7 +203,7 @@ class AddAPerson(tk.Frame):
                 success, frame = vid.read()
                 cv2.imshow("hit 's' to save image", frame)
                 key = cv2.waitKey(1)
-                if key == ord('s'):
+                if key == ord('s' or 'S'):
                     self.value = True
                     cv2.imwrite('image.jpg', frame)
                     cv2.destroyWindow("hit 's' to save image")
@@ -213,6 +232,7 @@ class AddAPerson(tk.Frame):
                                                             job TEXT,
                                                             address TEXT, 
                                                             mob INT,
+                                                            doj TEXT, 
                                                             image BLOB)""")
         conn.commit()
         c.close()
@@ -225,20 +245,30 @@ class AddAPerson(tk.Frame):
                                    parent=self)
             return
 
+
         add_name = self.name.get()
         add_empid = self.empid.get()
         add_address = self.address.get()
         add_mob = self.mobile.get()
         add_job = self.job.get()
+        add_date = date.today()
+        add_date = str(add_date)
+
+        with open('remove.txt', 'w+') as f:
+            text = f.read()
+            if add_empid in text:
+                text.delete(add_empid)
+                f.write(text)
+
         with open('image.jpg', 'rb') as f:
             add_img = f.read()
-
 
         conn = sqlite3.connect('attendance.db')
         c = conn.cursor()
         try:
-            c.execute(f"""INSERT INTO users (name, empid, job, address, mob, image)
-                        VALUES (?, ?, ?, ?, ?, ?)""", (add_name, add_empid, add_job, add_address, add_mob, add_img))
+            c.execute(f"""INSERT INTO users (name, empid, job, address, mob, doj, image)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                      (add_name, add_empid, add_job, add_address, add_mob, add_date, add_img))
 
         except sqlite3.IntegrityError:
             messagebox.showerror(title="Already Present",
@@ -293,26 +323,42 @@ class RemoveAPerson(tk.Frame):
             conn = sqlite3.connect('attendance.db')
             c = conn.cursor()
 
-            c.execute(
-                f"DELETE FROM users WHERE name='{self.name.get()}'AND empId='{self.empid.get()}'")
+            text = c.execute(f"SELECT name, empId FROM users")
+            removeid = []
+            removename = []
+            for x in text:
+                removeid.append(x[1])
+                removename.append(x[0])
+
+            # print(removeid, removename)
+
+            if (self.empid.get(), self.name.get()) not in zip(removeid, removename):
+                messagebox.showerror(title="No record found",
+                                     message="No such record was found !",
+                                     parent=self)
+
+            else:
+                with open("remove.txt", "w") as f:
+                    f.write(self.empid.get() + " ")
+
+                c.execute(f"DELETE FROM users WHERE name='{self.name.get()}'AND empId='{self.empid.get()}'")
+
+                messagebox.showinfo(title="Removed Successfully",
+                                    message="The record was removed from the database successfully",
+                                    parent=self)
+                self.name.delete(0, 'end')
+                self.empid.delete(0, 'end')
+                self.name.focus()
 
             conn.commit()
             c.close()
             conn.close()
-            messagebox.showinfo(title="Removed Successfully",
-                                message="The record was removed from the database successfully",
-                                parent=self)
-            self.name.delete(0, 'end')
-            self.empid.delete(0, 'end')
-            self.name.focus()
 
-        # buttons
         backbtn = tk.Button(self, text="◀ Back", fg="black", border=0, font=("", 16), padx=2,
                             command=lambda: controller.show_frame(Menu)).place(x=75, y=30)
         rembutton = tk.Button(self, text="Remove", fg="black", border=0, font=("", 26), padx=60,
                               command=sure).place(x=260, y=345)
         self.name.focus()
-        # add a popup window to either show an error or to show something like do you wish to continue to delete
 
 
 class ShowDB(tk.Frame):
@@ -333,7 +379,7 @@ class ShowDB(tk.Frame):
         scroll_h.pack(side=tk.BOTTOM, fill="x")
 
         self.db = tk.Text(self, font=("Ivory", 26), bg="grey", fg="orange", width=34, height=9, pady=6, padx=2,
-                                        wrap= tk.NONE, yscrollcommand=scroll_v.set, xscrollcommand=scroll_h.set)
+                          wrap=tk.NONE, yscrollcommand=scroll_v.set, xscrollcommand=scroll_h.set)
         scroll_h.config(command=self.db.xview)
         scroll_v.config(command=self.db.yview)
         self.db.place(x=116, y=99)
@@ -392,14 +438,14 @@ class ShowAttendance(tk.Frame):
         scroll_v.config(command=self.db.yview)
         self.db.place(x=113, y=105)
 
-
         self.db.config(state='disabled')
 
         searchDate = date.today()
         searchDate = str(searchDate)
 
         self.date_entry = tk.Entry(self, font=("Ivory", 26), bg="grey", fg="orange", width=11)
-
+        self.date_entry.delete(0, "end")
+        self.date_entry.insert(0, searchDate)
 
         self.date_entry.place(x=280, y=56)
 
@@ -407,7 +453,7 @@ class ShowAttendance(tk.Frame):
                             command=lambda: controller.show_frame(Menu)).place(x=75, y=30)
 
         searchbutton = tk.Button(self, text='Search', fg="black", border=0, font=("", 26, "bold"), padx=9,
-                              command = lambda: self.getdata()).place(x=483, y=56)
+                                 command=lambda: self.getdata()).place(x=483, y=56)
 
     def getdata(self):
         # self.date_entry.insert(0, searchDate)
@@ -420,8 +466,8 @@ class ShowAttendance(tk.Frame):
             text = c.execute(f'SELECT * FROM "{searchDate}"')
         except sqlite3.OperationalError:
             messagebox.showerror(title="No such table",
-                                message="No such table exists!",
-                                parent=self)
+                                 message="No such table exists!",
+                                 parent=self)
             self.db.config(state='normal')
             self.db.delete('1.0', 'end')
             self.db.config(state='disabled')
@@ -438,13 +484,7 @@ class ShowAttendance(tk.Frame):
         conn.commit()
         c.close()
         conn.close()
-
-        # except:
-        #     messagebox.showerror(title="Error", message="No Person is added to the table", parent=self)
-        #     c.close()
-        #     conn.close()
         return
-
 
 
 app = Application()

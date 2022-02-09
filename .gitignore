@@ -1,6 +1,7 @@
 # Binaries for programs and plugins
 *.csv
 *.exe
+*.txt
 *.exe~
 *.dll
 *.so

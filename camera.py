@@ -24,7 +24,7 @@ def find_encoding(im):
 m = c.execute("SELECT * FROM users")
 for i in m:
     with open("image.jpg", "wb") as f:
-        f.write(i[5])
+        f.write(i[6])
     img = cv2.imread('image.jpg')
 
     if os.path.exists('image.jpg'):
