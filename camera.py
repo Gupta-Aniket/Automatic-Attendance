@@ -2,6 +2,7 @@ import cv2
 import face_recognition as fr
 import numpy as np
 import os
+from tkinter import messagebox
 from datetime import datetime, date
 import sqlite3
 
@@ -77,7 +78,13 @@ while True:
         distance = fr.face_distance(knownEncodings, encode)
 
         # print(distance)
-        matchIndex = np.argmin(distance)
+        try:
+            matchIndex = np.argmin(distance)
+        except ValueError:
+            messagebox.showwarning(title="DB empty",
+                                   message="No records are present in the DB")
+            feed.release()
+            cv2.destroyWindow('webcam')
 
         if match[matchIndex]:
             name = names[matchIndex].upper()

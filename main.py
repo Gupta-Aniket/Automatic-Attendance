@@ -1,6 +1,7 @@
 import sqlite3
 import os
 import cv2
+import re
 from PIL import Image, ImageTk
 import tkinter as tk
 from tkinter import END, Button, Entry, Label, PhotoImage, messagebox, filedialog
@@ -249,7 +250,16 @@ class AddAPerson(tk.Frame):
         add_name = self.name.get()
         add_empid = self.empid.get()
         add_address = self.address.get()
-        add_mob = self.mobile.get()
+        add_mob = "91 "+self.mobile.get()
+        pattern = re.compile('(0|91)?[-\s]?[6-9]\d{9}')
+        if(pattern.match(add_mob)==0):
+            self.mobile.delete(0, 'end')
+            messagebox.showwarning(title="Phone no. not valid",
+                                 message="The phone number entered is not valid",
+                                 parent=self)
+
+
+
         add_job = self.job.get()
         add_date = date.today()
         add_date = str(add_date)
