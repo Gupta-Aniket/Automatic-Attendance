@@ -17,7 +17,6 @@ DefaultLoginPwd = "Password"
 class Application(tk.Tk):
     def __init__(self, *args, **kwargs):
         tk.Tk.__init__(self, *args, **kwargs)
-
         window = tk.Frame(self)
         window.pack()
         window.grid_rowconfigure(0, minsize=450)
@@ -35,6 +34,9 @@ class Application(tk.Tk):
         frame = self.frames[page]
         frame.tkraise()
         self.title("Automatic Attendance")
+        icon = tk.PhotoImage(file="UI 2/icon.png")  
+
+        self.iconphoto(True, icon)
 
 
 class Login(tk.Frame):
@@ -165,10 +167,13 @@ class AddAPerson(tk.Frame):
 
         if os.path.getsize("remove.txt") != 0:
             with open("remove.txt", "r") as f:
-                text = f.read()
+                text = f.readline()
+                lines = f.readlines()
+
+            
             self.empid.config(state='normal')
             self.empid.delete(0, "end")
-            self.empid.insert(0, text[0])
+            self.empid.insert(0, text)
             self.empid.config(state='disabled')
 
 
@@ -291,7 +296,18 @@ class AddAPerson(tk.Frame):
             messagebox.showinfo(title="Added Successfully",
                                 message="The data was added to the database successfully",
                                 parent=self)
+
             self.clear()
+            self.autoEmployee()
+            if self.lines:
+                self.lines.pop(1)
+
+            with open("remove.txt", 'w') as f:
+                    f.writelines(self.lines)
+
+
+
+
 
 
 class RemoveAPerson(tk.Frame):
@@ -412,7 +428,11 @@ class ShowDB(tk.Frame):
         self.db.config(state='normal')
         self.db.delete('1.0', 'end')
         for x in text:
-            self.db.insert(tk.END, x[0] + space + x[1] + space + x[2] + space + str(x[3]) + space + str(x[4]) + '\n')
+            try : 
+                self.db.insert(tk.END, x[0] + space + x[1] + space + x[2] + space + str(x[3]) + space + str(x[4]) + '\n')
+            except Exception :
+                pass
+            
 
         self.db.config(state='disabled')
         conn.commit()
@@ -483,13 +503,16 @@ class ShowAttendance(tk.Frame):
             self.db.config(state='disabled')
 
             return
+        
         space = " || "
         self.db.config(state='normal')
         self.db.delete('1.0', 'end')
         for x in text:
-            self.db.insert(tk.END,
-                           x[0] + space + x[1] + space + x[3] + '\n')
-
+            try : 
+                self.db.insert(tk.END,
+                            x[0] + space + x[1] + space + x[3]+ "\n")
+            except Exception :
+                pass
         self.db.config(state='disabled')
         conn.commit()
         c.close()

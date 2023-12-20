@@ -16,7 +16,7 @@ names = []
 conn = sqlite3.connect('attendance.db')
 c = conn.cursor()
 
-def find_encoding(im):
+def find_encoding(im):         
     imColor = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
     face_encodings = fr.face_encodings(imColor)[0]
     knownEncodings.append(face_encodings)
